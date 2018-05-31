@@ -75,8 +75,7 @@ net.createServer(socket => {
                 break;
             case 'q':
             case 'quit':
-                console.log("ciao");
-                rl.close();
+                cmds.quitCmd()
                 break;
 
             default:
@@ -89,7 +88,7 @@ net.createServer(socket => {
     })
         .on('close', () => {
             log(socket,'Adios qliao', 'yellow');
-            process.exit(0);
+            //process.exit(0);
         });
 })
 

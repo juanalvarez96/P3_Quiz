@@ -231,3 +231,8 @@ const playOne = (socket,rl, toBeResolved, scores) => {
 
 };
 
+exports.quitCmd = (socket, rl) => {
+    rl.close();
+    socket.end();
+}
+
