@@ -3,26 +3,26 @@ const {models} = require('./model');
 const {log, biglog, errorlog, colorize} = require('./out');
 
 
-exports.helpCmd = () => {
-    console.log('Comandos');
-    console.log(" h|help - Mostrar ayuda");
-    console.log(" list - listar quizzes");
-    console.log(" show <id> - Muestra pregunta y respuesta");
-    console.log("add - añadir nuevo quiz");
-    console.log("delete <id> - Borrar");
-    console.log("edit <id> - editar quiz");
-    console.log("p|play - Empezar a juagr");
-    console.log("credits - creditos");
-    console.log("q|quit - largarse");
+exports.helpCmd = (socket, rl) => {
+    socket.write('Comandos \n');
+    socket.write(" h|help - Mostrar ayuda\n");
+    socket.write(" list - listar quizzes");
+    socket.write(" show <id> - Muestra pregunta y respuesta\n");
+    socket.write("add - añadir nuevo quiz\n");
+    socket.write("delete <id> - Borrar\n");
+    socket.write("edit <id> - editar quiz\n");
+    socket.write("p|play - Empezar a juagr\n");
+    socket.write("credits - creditos\n");
+    socket.write("q|quit - largarse\n");
 };
 
-exports.listCmd = (rl) => {
+exports.listCmd = (socket, rl) => {
     models.quiz.findAll()
         .each(quiz => {
-            log(`[${colorize(quiz.id, 'magenta')}]: ${colorize(quiz.question, 'green')}`)
+            log(socket,`[${colorize(quiz.id, 'magenta')}]: ${colorize(quiz.question, 'green')}`)
         })
         .catch(error => {
-            errorlog(error.message);
+            errorlog(socket,error.message);
         })
         .then(() => {
             rl.prompt();
@@ -30,12 +30,12 @@ exports.listCmd = (rl) => {
         });
 };
 
-exports.creditCmd = (rl) => {
-    console.log("Practica realizada por juan");
+exports.creditCmd = (socket, rl) => {
+    socket.write("Practica realizada por juan");
     rl.prompt();
 };
 
-exports.playCmd = (rl) => {
+exports.playCmd = (socket, rl) => {
 
     let scores = 0;
     let toBeResolved = [];
@@ -44,7 +44,7 @@ exports.playCmd = (rl) => {
             for (i = 0; i < quizzes.length; i++) {
                 toBeResolved[i] = quizzes[i].id;
             }
-            playOne(rl, toBeResolved, scores);
+            playOne(socket,rl, toBeResolved, scores);
         })
 
 };
@@ -62,7 +62,7 @@ const createQuestion = (message, rl) => {
     })
 };
 
-exports.addCmd = (rl) => {
+exports.addCmd = (socket, rl) => {
     createQuestion("Introduzca nueva pregunta: ", rl)
         .then(q => {
             return createQuestion("Introduzca nueva respuesta: ", rl)
@@ -74,7 +74,7 @@ exports.addCmd = (rl) => {
             models.quiz.create(quiz);
         })
         .catch(error => {
-            errorlog(error.message);
+            errorlog(socket,error.message);
         })
         .then(() => {
             rl.prompt();
@@ -82,7 +82,7 @@ exports.addCmd = (rl) => {
 
 };
 
-exports.editCmd = (rl, id) => {
+exports.editCmd = (socket, rl, id) => {
     validateId(id)
         .then(id => {
             return createQuestion(colorize('Introduzca pregunta: ', 'red'), rl)
@@ -102,18 +102,18 @@ exports.editCmd = (rl, id) => {
                     return quiz.save();
                 })
                 .then(quiz => {
-                    log('Quiz modificado correctamente', 'magenta')
+                    log(socket,'Quiz modificado correctamente', 'magenta')
                 })
         })
         .catch(error => {
-            errorlog(error);
+            errorlog(socket,error);
         })
         .then(() => {
             rl.prompt();
         })
 };
 
-exports.deleteCmd = (rl, id) => {
+exports.deleteCmd = (socket, rl, id) => {
 
     validateId(id)
         .then(id => {
@@ -146,56 +146,56 @@ const validateId = id => {
     })
 };
 
-exports.showCmd = (rl, id) => {
+exports.showCmd = (socket, rl, id) => {
 
     validateId(id)
         .then(id => {
             models.quiz.findById(id)
                 .then(quiz => {
-                    log(` ${colorize(quiz.question, 'red')}: ${colorize(quiz.answer, "black")}`);
+                    log(socket,` ${colorize(quiz.question, 'red')}: ${colorize(quiz.answer, "black")}`);
                     rl.prompt();
                 })
         })
         .catch(error => {
-            errorlog(error.message);
+            errorlog(socket,error.message);
             rl.prompt();
         })
 
 };
 
-exports.testCmd = (rl, id) => {
+exports.testCmd = (socket, rl, id) => {
     validateId(id)
         .then(id => {
             models.quiz.findById(id)
                 .then(quiz => {
                     rl.question(quiz.question + "?  ", respuesta => {
                         if (respuesta.toLowerCase().trim() === quiz.answer.toLowerCase()) {
-                            log("Su respuesta es correcta");
-                            biglog("CORRECTO", "green");
+                            log(socket,"Su respuesta es correcta");
+                            biglog(socket,"CORRECTO", "green");
                         }
                         else {
-                            log("Su respuesta es incorrecta");
-                            biglog("INCORRECTO", "red");
+                            log(socket,"Su respuesta es incorrecta");
+                            biglog(socket,"INCORRECTO", "red");
                         }
                         rl.prompt();
                     });
                 })
                 .catch(error => {
-                    console.log(` Quiz <id> does not exist`);
+                    socket.write(` Quiz <id> does not exist`);
                     rl.prompt();
                 })
         })
         .catch(error => {
-            errorlog(error.message);
+            errorlog(socket,error.message);
             rl.prompt();
         })
 
 };
 
-const playOne = (rl, toBeResolved, scores) => {
+const playOne = (socket,rl, toBeResolved, scores) => {
     if (toBeResolved.length === 0) {
-        log("Ya no quedan mas preguntas");
-        log("Su resultado: " + scores);
+        log(socket,"Ya no quedan mas preguntas");
+        log(socket,"Su resultado: " + scores);
         rl.prompt();
     } else {
         let indice = Math.floor(Math.random() * toBeResolved.length);
@@ -210,15 +210,15 @@ const playOne = (rl, toBeResolved, scores) => {
                 createQuestion(` ${quiz.question} ?`, rl)
                     .then(answer => {
                         if (answer.trim().toLowerCase() === quiz.answer.trim().toLowerCase()) {
-                            log("Su respuesta es correcta");
+                            log(socket,"Su respuesta es correcta");
                             scores++;
-                            biglog("CORRECTO", "green");
-                            biglog(scores, "red");
+                            biglog(socket,"CORRECTO", "green");
+                            biglog(socket,scores, "red");
                             playOne(rl, toBeResolved, scores);
 
                         }
                         else {
-                            log("INCORRECTO - Fin del juego. Aciertos "+ scores);
+                            log(socket,"INCORRECTO - Fin del juego. Aciertos "+ scores);
                             rl.prompt();
 
                         }
