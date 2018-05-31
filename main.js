@@ -54,6 +54,7 @@ rl.on('line', (line) => {
             break;
         case 'test':
             cmds.testCmd(rl, args[1]);
+            break;
         case 'play':
             cmds.playCmd(rl);
             break;
